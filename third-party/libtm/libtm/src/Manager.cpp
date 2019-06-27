@@ -480,7 +480,7 @@ DEFINE_FSM_ACTION(Manager, ACTIVE_STATE, ON_ATTACH, msg)
     {
         /* To debug libusb issues, enable logs using libusb_set_debug(mContext, LIBUSB_LOG_LEVEL_INFO) */
 
-        auto device = new DeviceHolder(m.device, mDispatcher, this);
+        auto device = new DeviceHolder(m.device, mDispatcher, this, this);
 
 //        libusb_ref_device(m.device); // removed to prevent double locking (already happens in deviceHolder constructor)
         mLibUsbDeviceToTrackingDeviceMap[m.device] = device;

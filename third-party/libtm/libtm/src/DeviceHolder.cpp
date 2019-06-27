@@ -1,5 +1,3 @@
-// License: Apache 2.0. See LICENSE file in root directory.
-// Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 //
 // Created by or on 6/25/19.
 //
@@ -10,12 +8,13 @@
 
 
 
-DeviceHolder::DeviceHolder(libusb_device *_device, std::shared_ptr<perc::Dispatcher> _dispatcher, perc::Manager *_manager):
+DeviceHolder::DeviceHolder(libusb_device *_device, std::shared_ptr<perc::Dispatcher> _dispatcher, EventHandler* owner, perc::CompleteQueueHandler* taskHandler):
 m_dispatcher(_dispatcher),
 m_libusb_device(_device),
-m_manager(_manager)
+mTaskHandler(taskHandler),
+mOwner(owner)
 {
-    auto device = new perc::Device(m_libusb_device,m_dispatcher.get(),m_manager,m_manager);
+    auto device = new perc::Device(m_libusb_device,m_dispatcher.get(), mOwner, mTaskHandler);
     device->GetDeviceInfo(m_dev_info);
     delete device;
 }
@@ -27,7 +26,13 @@ DeviceHolder::~DeviceHolder()
 
 
 std::shared_ptr<perc::TrackingDevice> DeviceHolder::get_device() {
-    auto device = std::make_shared<perc::Device>(m_libusb_device,m_dispatcher.get(), m_manager, m_manager);
+    auto device = std::make_shared<perc::Device>(m_libusb_device,m_dispatcher.get(), mOwner, mTaskHandler);
     libusb_ref_device(m_libusb_device);
     return device;
+}
+
+void DeviceHolder::onTimeout(uintptr_t timerId, const perc::Message & msg)
+{
+    // Schedule the listener itself for every 500 msec
+    m_dispatcher->scheduleTimer(this, 500, perc::Message(0));
 }
